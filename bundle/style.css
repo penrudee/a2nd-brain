@@ -42,7 +42,21 @@ body {
   padding: 16px;
   gap: 16px;
 }
-
+/* จัดเลย์เอาต์ Sidebar ฝั่งซ้ายให้เลื่อนลงมาดูได้และไม่ล้นหน้าจอ */
+    .sidebar, aside {
+      display: flex;
+      flex-direction: column;
+      max-height: 100vh;
+      overflow-y: auto;
+    }
+    #folder-tree {
+      flex-shrink: 0;
+    }
+    .connections-container {
+      margin-top: 12px;
+      padding-bottom: 20px;
+      flex-shrink: 0;
+    }
 .brand {
   display: flex;
   align-items: center;

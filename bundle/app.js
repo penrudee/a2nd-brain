@@ -1,6 +1,6 @@
 // ==========================================
 // A2ND Brain - Application Core Logic
-// Integrated: Backlinks, Auto Keyword Linker, & RAG Cross-Referencing Engine
+// Integrated: Backlinks, Auto Keyword Linker, RAG Engine, Zip Backup/Restore & File Attachments Engine
 // ==========================================
 
 import { AnnaAppRuntime } from "/static/anna-apps/_sdk/latest/index.js";
@@ -24,7 +24,7 @@ let activeWikilinkIndex = 0;
 let autoFormatDebounce;
 let ragSuggestDebounce;
 let lastAutoFormattedContent = '';
-const AUTO_FORMAT_IDLE_MS = 3500; // รอผู้ใช้หยุดพิมพ์ 3.5 วิ
+const AUTO_FORMAT_IDLE_MS = 3500;
 const AUTO_FORMAT_MIN_LENGTH = 30;
 
 // ------------------------------------------
@@ -33,7 +33,7 @@ const AUTO_FORMAT_MIN_LENGTH = 30;
 const FOLDERS = [
   { id: 'projects', label: '01 Projects', icon: '📁', hint: 'มีเป้าหมายชัดเจน + มีวันสิ้นสุด' },
   { id: 'areas', label: '02 Areas', icon: '📁', hint: 'มาตรฐานชีวิตที่ต้องดูแลต่อเนื่อง' },
-  { id: 'resources', label: '03 Resources', icon: '📁', hint: 'คลังความรู้/หัวข้อที่สนใจ' },
+  { id: 'resources', label: '03 Resources', icon: '📁', hint: 'คลังความรู้/ไฟล์อ้างอิง/PDF/รูปภาพ' },
   { id: 'archives', label: '04 Archives', icon: '📁', hint: 'ข้อมูลที่เสร็จแล้วหรือเก็บเข้ากรุ' }
 ];
 const INBOX_FOLDER = { id: 'inbox', label: '00 Inbox', icon: '📥', hint: 'โน้ตที่ยังไม่ได้จัดหมวดหมู่' };
@@ -43,6 +43,13 @@ let expandedFolders = new Set([INBOX_FOLDER.id, ...FOLDERS.map(f => f.id)]);
 // UI Elements
 let folderSelect = null;
 let btnExportVault = null;
+let btnImportVault = null;
+let fileImportInput = null;
+
+// File Attachment UI Elements
+let btnAttachFile = null;
+let fileAttachInput = null;
+let attachmentListContainer = null;
 
 // DOM Elements
 const noteTitleInput = document.getElementById('note-title');
@@ -62,6 +69,9 @@ const btnSendAi = document.getElementById('btn-send-ai');
 const btnNewNote = document.getElementById('btn-new-note');
 const folderTree = document.getElementById('folder-tree');
 
+// โครงสร้างเก็บข้อมูลไฟล์แนบของโน้ตปัจจุบัน
+let currentAttachments = [];
+
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     anna = await AnnaAppRuntime.connect();
@@ -71,14 +81,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   injectStyles();
   ensureFolderSelectUI();
-  ensureExportButtonUI();
+  ensureBackupUI();
+  ensureAttachmentUI();
   initEventListeners();
   await loadNotesList();
   await renderBacklinksUI();
-  await runRAGCrossReferencing(); // รันการค้นหาความเชื่อมโยงเมื่อเปิดแอป
+  await runRAGCrossReferencing();
 });
 
-// CSS ตกแต่ง UI สำหรับ Backlinks & RAG Cross-referencing Panel
+// CSS ตกแต่ง UI สำหรับ Backup, Folders และ Attachments
 function injectStyles() {
   const style = document.createElement('style');
   style.textContent = `
@@ -92,19 +103,25 @@ function injectStyles() {
       border: 1px solid rgba(255,255,255,0.2);
       border-radius: 4px;
     }
-    .btn-export-vault {
-      width: 100%;
+    .backup-btn-group {
+      display: flex;
+      gap: 6px;
       margin-top: 6px;
-      padding: 8px 10px;
-      font-size: 13px;
+    }
+    .btn-export-vault, .btn-import-vault, .btn-attach-file {
+      flex: 1;
+      padding: 8px 6px;
+      font-size: 12px;
       cursor: pointer;
       border-radius: 6px;
       border: 1px solid rgba(255,255,255,0.15);
       background: rgba(255,255,255,0.05);
       color: inherit;
+      text-align: center;
     }
-    .btn-export-vault:hover { background: rgba(255,255,255,0.1); }
-    .btn-export-vault:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-export-vault:hover, .btn-import-vault:hover, .btn-attach-file:hover { background: rgba(255,255,255,0.1); }
+    .btn-export-vault:disabled, .btn-import-vault:disabled, .btn-attach-file:disabled { opacity: 0.6; cursor: not-allowed; }
+    
     .folder-group { margin-bottom: 4px; }
     .folder-header {
       display: flex;
@@ -120,6 +137,50 @@ function injectStyles() {
     .folder-count { opacity: 0.6; font-size: 11px; margin-left: auto; }
     .folder-empty { padding-left: 24px; font-size: 12px; opacity: 0.5; }
     .folder-group .note-item { padding-left: 20px; }
+
+    /* Attachment Section UI */
+    .attachment-section {
+      margin: 12px 0;
+      padding: 8px;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(255,255,255,0.15);
+      border-radius: 6px;
+    }
+    .attachment-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .attachment-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      font-size: 11px;
+      max-width: 200px;
+    }
+    .attachment-preview-img {
+      width: 28px;
+      height: 28px;
+      object-fit: cover;
+      border-radius: 3px;
+    }
+    .attachment-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
+    }
+    .btn-remove-attachment {
+      cursor: pointer;
+      color: #ff6b6b;
+      font-weight: bold;
+      margin-left: auto;
+    }
 
     /* Sidebar Connections (Backlinks & RAG) */
     .connections-container {
@@ -195,16 +256,72 @@ function ensureFolderSelectUI() {
   }
 }
 
-function ensureExportButtonUI() {
-  if (btnExportVault) return;
+function ensureBackupUI() {
+  if (btnExportVault && btnImportVault) return;
+
+  const container = document.createElement('div');
+  container.className = 'backup-btn-group';
+
   btnExportVault = document.createElement('button');
   btnExportVault.id = 'btn-export-vault';
   btnExportVault.className = 'btn-export-vault';
-  btnExportVault.textContent = '⬇️ สำรองข้อมูลทั้งหมด (.zip)';
+  btnExportVault.textContent = '⬇️ สำรองข้อมูล (.zip)';
   btnExportVault.addEventListener('click', exportVaultAsZip);
 
+  btnImportVault = document.createElement('button');
+  btnImportVault.id = 'btn-import-vault';
+  btnImportVault.className = 'btn-import-vault';
+  btnImportVault.textContent = '⬆️ คืนค่าข้อมูล (.zip)';
+  btnImportVault.addEventListener('click', () => fileImportInput.click());
+
+  fileImportInput = document.createElement('input');
+  fileImportInput.type = 'file';
+  fileImportInput.accept = '.zip';
+  fileImportInput.style.display = 'none';
+  fileImportInput.addEventListener('change', handleImportZip);
+
+  container.appendChild(btnExportVault);
+  container.appendChild(btnImportVault);
+  container.appendChild(fileImportInput);
+
   if (btnNewNote && btnNewNote.parentElement) {
-    btnNewNote.parentElement.insertBefore(btnExportVault, btnNewNote.nextSibling);
+    btnNewNote.parentElement.insertBefore(container, btnNewNote.nextSibling);
+  }
+}
+
+function ensureAttachmentUI() {
+  if (btnAttachFile) return;
+
+  const section = document.createElement('div');
+  section.className = 'attachment-section';
+
+  const topBar = document.createElement('div');
+  topBar.style.display = 'flex';
+  topBar.style.justifySpaceBetween = 'space-between';
+  topBar.style.alignItems = 'center';
+
+  btnAttachFile = document.createElement('button');
+  btnAttachFile.id = 'btn-attach-file';
+  btnAttachFile.className = 'btn-attach-file';
+  btnAttachFile.textContent = '📎 แนบไฟล์อ้างอิง (รูปภาพ / PDF)';
+  btnAttachFile.addEventListener('click', () => fileAttachInput.click());
+
+  fileAttachInput = document.createElement('input');
+  fileAttachInput.type = 'file';
+  fileAttachInput.accept = 'image/*,application/pdf';
+  fileAttachInput.style.display = 'none';
+  fileAttachInput.addEventListener('change', handleFileUpload);
+
+  attachmentListContainer = document.createElement('div');
+  attachmentListContainer.id = 'attachment-list';
+  attachmentListContainer.className = 'attachment-list';
+
+  section.appendChild(btnAttachFile);
+  section.appendChild(fileAttachInput);
+  section.appendChild(attachmentListContainer);
+
+  if (noteContentInput && noteContentInput.parentElement) {
+    noteContentInput.parentElement.insertBefore(section, noteContentInput);
   }
 }
 
@@ -233,12 +350,11 @@ function initEventListeners() {
 
     handleWikilinkInput(e);
 
-    // หน่วงเวลาสำหรับ RAG Cross-referencing และ Auto-linking
     clearTimeout(autoFormatDebounce);
     autoFormatDebounce = setTimeout(async () => {
       await autoLinkKeywordsInContent();
       await autoFormatNoteWithAI();
-      await runRAGCrossReferencing(); // ค้นหาความเชื่อมโยงข้ามโน้ตอัตโนมัติ
+      await runRAGCrossReferencing();
     }, AUTO_FORMAT_IDLE_MS);
   });
 
@@ -267,6 +383,136 @@ function initEventListeners() {
     if (wikilinkDropdown && !wikilinkDropdown.contains(e.target) && e.target !== noteContentInput) {
       removeWikilinkDropdown();
     }
+  });
+}
+
+// ------------------------------------------
+// Attachment & Text Extraction Engine
+// ------------------------------------------
+async function handleFileUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  saveStatus.textContent = '⏳ กำลังประมวลผลไฟล์แนบ...';
+
+  try {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUrl = e.target.result;
+      const fileData = {
+        id: Date.now().toString(),
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        dataUrl: dataUrl,
+        extractedText: ''
+      };
+
+      if (file.type.startsWith('image/')) {
+        saveStatus.textContent = '🧠 AI กำลังอ่านและสกัดข้อความจากรูปภาพ...';
+        fileData.extractedText = await extractTextFromImage(dataUrl);
+      } else if (file.type === 'application/pdf') {
+        saveStatus.textContent = '📄 กำลังอ่านข้อมูล PDF...';
+        fileData.extractedText = `[ไฟล์ PDF อ้างอิง: ${file.name}]`;
+      }
+
+      currentAttachments.push(fileData);
+      renderAttachments();
+
+      // หากมีการสกัดข้อความได้ ให้นำข้อความแนบต่อท้ายโน้ตอัตโนมัติ
+      if (fileData.extractedText) {
+        saveState(noteContentInput.value);
+        const appendHeader = `\n\n--- \n📌 **ข้อความสกัดจากไฟล์อ้างอิง (${file.name}):**\n${fileData.extractedText}\n`;
+        noteContentInput.value += appendHeader;
+        saveState(noteContentInput.value);
+      }
+
+      await saveCurrentNote();
+      saveStatus.textContent = '✅ แนบไฟล์สำเร็จ';
+      await runRAGCrossReferencing();
+    };
+    reader.readAsDataURL(file);
+  } catch (err) {
+    console.error('File upload error:', err);
+    saveStatus.textContent = '❌ แนบไฟล์ไม่สำเร็จ';
+  } finally {
+    fileAttachInput.value = '';
+  }
+}
+
+async function extractTextFromImage(dataUrl) {
+  const annaLLM = anna?.llm;
+  if (!annaLLM || typeof annaLLM.complete !== 'function') return '';
+
+  const aiPrompt = `
+    คุณคือ Vision OCR Engine
+    หน้าที่ของคุณ: สกัดและอธิบายข้อความ ข้อมูล สรุป หรือไดอะแกรมที่ปรากฏในรูปภาพนี้เป็นภาษาไทยให้อ่านเข้าใจง่าย
+    ส่งกลับเฉพาะข้อความเนื้อหา ห้ามใส่คำอธิบายอื่น
+  `;
+
+  try {
+    const response = await annaLLM.complete({
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: aiPrompt },
+            { type: 'image_url', image_url: { url: dataUrl } }
+          ]
+        }
+      ]
+    });
+    return parseLLMResponse(response).trim();
+  } catch (err) {
+    console.warn('Vision OCR failed:', err);
+    return '';
+  }
+}
+
+function renderAttachments() {
+  if (!attachmentListContainer) return;
+  attachmentListContainer.innerHTML = '';
+
+  if (currentAttachments.length === 0) {
+    attachmentListContainer.style.display = 'none';
+    return;
+  }
+
+  attachmentListContainer.style.display = 'flex';
+
+  currentAttachments.forEach((att) => {
+    const card = document.createElement('div');
+    card.className = 'attachment-card';
+
+    if (att.type.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.src = att.dataUrl;
+      img.className = 'attachment-preview-img';
+      card.appendChild(img);
+    } else {
+      const icon = document.createElement('span');
+      icon.textContent = '📄';
+      card.appendChild(icon);
+    }
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'attachment-name';
+    nameSpan.textContent = att.name;
+    nameSpan.title = att.name;
+    card.appendChild(nameSpan);
+
+    const btnRemove = document.createElement('span');
+    btnRemove.className = 'btn-remove-attachment';
+    btnRemove.textContent = '✕';
+    btnRemove.title = 'ลบไฟล์แนบ';
+    btnRemove.onclick = async () => {
+      currentAttachments = currentAttachments.filter(a => a.id !== att.id);
+      renderAttachments();
+      await saveCurrentNote();
+    };
+    card.appendChild(btnRemove);
+
+    attachmentListContainer.appendChild(card);
   });
 }
 
@@ -359,6 +605,7 @@ async function saveCurrentNote() {
     title: noteTitleInput.value || 'โน้ตไม่มีชื่อ',
     content: noteContentInput.value,
     folder: existingFolder,
+    attachments: currentAttachments,
     updatedAt: new Date().toISOString()
   };
 
@@ -442,8 +689,9 @@ async function loadNotesList() {
           item.classList.add('note-item');
           if (note.id === currentId) item.classList.add('active');
 
+          const hasAtt = note.attachments && note.attachments.length > 0;
           item.innerHTML = `
-            <span class="note-item-title">📄 ${note.title || 'โน้ตไม่มีชื่อ'}</span>
+            <span class="note-item-title">${hasAtt ? '📎' : '📄'} ${note.title || 'โน้ตไม่มีชื่อ'}</span>
             <button class="btn-delete-note" title="ลบโน้ต">✕</button>
           `;
 
@@ -467,6 +715,9 @@ async function switchNote(note) {
   noteTitleInput.value = note.title;
   noteContentInput.value = note.content;
   
+  currentAttachments = note.attachments || [];
+  renderAttachments();
+
   historyStack = [note.content];
   historyIndex = 0;
   updateUndoRedoButtons();
@@ -490,6 +741,7 @@ async function createNewNote() {
     title: 'โน้ตใหม่',
     content: '',
     folder: null,
+    attachments: [],
     updatedAt: new Date().toISOString()
   };
   await switchNote(newNote);
@@ -625,7 +877,6 @@ function insertWikilink(title, openIndex = null) {
     const newCursorPos = openIndex + insertedText.length;
     noteContentInput.setSelectionRange(newCursorPos, newCursorPos);
   } else {
-    // กรณีต่อท้ายเนื้อหา
     saveState(noteContentInput.value);
     noteContentInput.value += `\n\n[[${title}]]`;
     saveState(noteContentInput.value);
@@ -660,6 +911,9 @@ async function getBacklinksForNote(targetTitle) {
   });
 }
 
+// ------------------------------------------
+// Backlinks Engine (แก้ไขให้แสดงในพื้นที่เฉพาะ ไม่ทับ Sidebar)
+// ------------------------------------------
 async function renderBacklinksUI() {
   let backlinksContainer = document.getElementById('backlinks-container');
   
@@ -667,8 +921,10 @@ async function renderBacklinksUI() {
     backlinksContainer = document.createElement('div');
     backlinksContainer.id = 'backlinks-container';
     backlinksContainer.className = 'connections-container';
-    if (folderTree && folderTree.parentElement) {
-      folderTree.parentElement.appendChild(backlinksContainer);
+    
+    // แทรกไว้ต่อท้ายโครงสร้างโฟลเดอร์ (folderTree) แทนที่จะเป็น parent ทั้งหมด
+    if (folderTree && folderTree.parentNode) {
+      folderTree.parentNode.appendChild(backlinksContainer);
     }
   }
 
@@ -681,7 +937,7 @@ async function renderBacklinksUI() {
     <div class="backlinks-list">
       ${
         backlinks.length === 0
-          ? '<p class="empty-msg">ไม่มีโน้ตอื่นที่เชื่อมโยงมายังโน้ตนี้</p>'
+          ? '<p class="empty-msg" style="font-size:11px; opacity:0.6;">ไม่มีโน้ตอื่นที่เชื่อมโยงมายังโน้ตนี้</p>'
           : backlinks.map(bNote => `
               <div class="backlink-item" data-id="${bNote.id}">
                 <span class="backlink-title">👈 ${bNote.title || 'โน้ตไม่มีชื่อ'}</span>
@@ -702,7 +958,7 @@ async function renderBacklinksUI() {
 }
 
 // ------------------------------------------
-// RAG & Cross-Referencing Engine (Semantic Connections)
+// RAG & Cross-Referencing Engine
 // ------------------------------------------
 async function runRAGCrossReferencing() {
   const currentContent = noteContentInput.value.trim();
@@ -725,13 +981,12 @@ async function runRAGCrossReferencing() {
     return;
   }
 
-  // สร้าง Context Vault ย่อๆ ส่งให้ LLM วิเคราะห์ความสัมพันธ์แบบ RAG
   const notesContext = otherNotes.map(n => ({
     title: n.title,
     snippet: n.content.substring(0, 180)
   }));
 
-  const prompt = `
+  const aiPrompt = `
     คุณคือ RAG Cross-Referencing Engine สำหรับระบบจัดการความรู้ Second Brain
     หน้าที่ของคุณ: วิเคราะห์โน้ตปัจจุบัน แล้วเปรียบเทียบกับโน้ตอื่นๆ ใน Vault เพื่อค้นหาโน้ตที่มีความเชื่อมโยงเชิงความหมายหรือไอเดีย (Cross-referencing)
 
@@ -757,11 +1012,10 @@ async function runRAGCrossReferencing() {
     if (!annaLLM || typeof annaLLM.complete !== 'function') return;
 
     const response = await annaLLM.complete({
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: aiPrompt }]
     });
 
     const rawResult = parseLLMResponse(response).trim();
-    // ทำความสะอาด JSON จาก LLM
     const cleanJsonStr = rawResult.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
     const suggestions = JSON.parse(cleanJsonStr);
 
@@ -919,7 +1173,7 @@ async function autoFormatNoteWithAI() {
   const allNotes = await getNotesFromStorage();
   const otherTitles = allNotes.filter(n => n.id !== currentNoteId).map(n => n.title);
 
-  const prompt = `
+  const aiPrompt = `
     คุณคือ AI จัดระเบียบโน้ต Obsidian Second Brain
     หน้าที่: จัดรูปแบบโน้ตให้เป็น Markdown ที่อ่านง่าย และใส่ wikilink [[ชื่อโน้ต]] ในจุดที่พูดถึงหัวข้อตรงกับโน้ตอื่น
     รายชื่อโน้ตอื่น: ${JSON.stringify(otherTitles)}
@@ -932,7 +1186,7 @@ async function autoFormatNoteWithAI() {
 
   try {
     const response = await annaLLM.complete({
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: aiPrompt }]
     });
 
     const formatted = parseLLMResponse(response).trim();
@@ -968,7 +1222,7 @@ async function handleSendToAI() {
     let aiResponseText = '';
     let contextPrompt = selectedText ? `ข้อความที่ผู้ใช้ไฮไลต์: "${selectedText}"\n` : '';
 
-    const prompt = `
+    const aiPrompt = `
       คุณคือ AI Architect ของแอปจัดการความรู้ A2ND Brain
       ${contextPrompt}
       หัวข้อโน้ตปัจจุบัน: "${noteTitleInput.value}"
@@ -979,7 +1233,7 @@ async function handleSendToAI() {
     const annaLLM = anna?.llm;
     if (annaLLM && typeof annaLLM.complete === 'function') {
       const response = await annaLLM.complete({
-        messages: [{ role: 'user', content: prompt }]
+        messages: [{ role: 'user', content: aiPrompt }]
       });
       aiResponseText = parseLLMResponse(response);
     } else {
@@ -995,7 +1249,7 @@ async function handleSendToAI() {
 }
 
 // ------------------------------------------
-// Export Vault As .zip
+// Zip Export & Import Backup Engine (Pure JS)
 // ------------------------------------------
 let _crc32Table = null;
 function crc32(bytes) {
@@ -1138,7 +1392,7 @@ async function exportVaultAsZip() {
 
   try {
     btnExportVault.disabled = true;
-    btnExportVault.textContent = '⏳ กำลังสร้างไฟล์ .zip...';
+    btnExportVault.textContent = '⏳ สำรองข้อมูล...';
 
     const blob = buildZipBlob(files);
     const dateStr = new Date().toISOString().slice(0, 10);
@@ -1150,6 +1404,136 @@ async function exportVaultAsZip() {
     saveStatus.textContent = '❌ Export ไม่สำเร็จ';
   } finally {
     btnExportVault.disabled = false;
-    btnExportVault.textContent = '⬇️ สำรองข้อมูลทั้งหมด (.zip)';
+    btnExportVault.textContent = '⬇️ สำรองข้อมูล (.zip)';
+  }
+}
+
+// ------------------------------------------
+// ZIP Unpacker / Parser for Restore Backup
+// ------------------------------------------
+async function parseZipArchive(arrayBuffer) {
+  const view = new DataView(arrayBuffer);
+  const decoder = new TextDecoder('utf-8');
+  const files = [];
+
+  let eocdOffset = -1;
+  for (let i = arrayBuffer.byteLength - 22; i >= 0; i--) {
+    if (view.getUint32(i, true) === 0x06054b50) {
+      eocdOffset = i;
+      break;
+    }
+  }
+
+  if (eocdOffset === -1) {
+    throw new Error('รูปแบบไฟล์ ZIP ไม่ถูกต้อง');
+  }
+
+  const centralDirSize = view.getUint32(eocdOffset + 12, true);
+  const centralDirOffset = view.getUint32(eocdOffset + 16, true);
+  const totalEntries = view.getUint16(eocdOffset + 10, true);
+
+  let cursor = centralDirOffset;
+  for (let i = 0; i < totalEntries; i++) {
+    if (view.getUint32(cursor, true) !== 0x02014b50) break;
+
+    const compressionMethod = view.getUint16(cursor + 10, true);
+    const filenameLen = view.getUint16(cursor + 28, true);
+    const extraLen = view.getUint16(cursor + 30, true);
+    const commentLen = view.getUint16(cursor + 32, true);
+    const localHeaderOffset = view.getUint32(cursor + 42, true);
+
+    const nameBuffer = new Uint8Array(arrayBuffer, cursor + 46, filenameLen);
+    const filename = decoder.decode(nameBuffer);
+
+    cursor += 46 + filenameLen + extraLen + commentLen;
+
+    if (filename.endsWith('/') || compressionMethod !== 0) {
+      continue;
+    }
+
+    const localFilenameLen = view.getUint16(localHeaderOffset + 26, true);
+    const localExtraLen = view.getUint16(localHeaderOffset + 28, true);
+    const dataOffset = localHeaderOffset + 30 + localFilenameLen + localExtraLen;
+    const compressedSize = view.getUint32(localHeaderOffset + 18, true);
+
+    const contentBuffer = new Uint8Array(arrayBuffer, dataOffset, compressedSize);
+    const content = decoder.decode(contentBuffer);
+
+    files.push({ path: filename, content });
+  }
+
+  return files;
+}
+
+async function handleImportZip(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  try {
+    btnImportVault.disabled = true;
+    btnImportVault.textContent = '⏳ กำลังอ่านไฟล์...';
+    saveStatus.textContent = '⏳ กำลังคืนค่าข้อมูลจาก .zip...';
+
+    const arrayBuffer = await file.arrayBuffer();
+    const files = await parseZipArchive(arrayBuffer);
+
+    if (files.length === 0) {
+      saveStatus.textContent = '⚠️ ไม่พบไฟล์โน้ต .md ที่รองรับภายใน Zip';
+      return;
+    }
+
+    const existingNotes = await getNotesFromStorage();
+    let importedCount = 0;
+
+    files.forEach(file => {
+      if (!file.path.endsWith('.md')) return;
+
+      const pathParts = file.path.split('/');
+      let folderId = null;
+      let filename = pathParts[pathParts.length - 1];
+
+      if (pathParts.length > 1) {
+        const folderName = pathParts[0].toLowerCase();
+        const matchedFolder = FOLDERS.find(f => f.label.toLowerCase() === folderName || f.id === folderName);
+        if (matchedFolder) {
+          folderId = matchedFolder.id;
+        }
+      }
+
+      const noteTitle = filename.replace(/\.md$/i, '').replace(/\s\(\d+\)$/, '').trim();
+      const existingIndex = existingNotes.findIndex(n => n.title.toLowerCase() === noteTitle.toLowerCase());
+
+      if (existingIndex >= 0) {
+        existingNotes[existingIndex].content = file.content;
+        existingNotes[existingIndex].folder = folderId;
+        existingNotes[existingIndex].updatedAt = new Date().toISOString();
+      } else {
+        existingNotes.unshift({
+          id: Date.now().toString() + Math.random().toString(36).substring(2, 7),
+          title: noteTitle || 'โน้ตที่นำเข้า',
+          content: file.content,
+          folder: folderId,
+          attachments: [],
+          updatedAt: new Date().toISOString()
+        });
+      }
+      importedCount++;
+    });
+
+    await saveNotesToStorage(existingNotes);
+    await loadNotesList();
+
+    if (existingNotes.length > 0) {
+      await switchNote(existingNotes[0]);
+    }
+
+    saveStatus.textContent = `✅ คืนค่าสำเร็จ ${importedCount} โน้ต`;
+  } catch (err) {
+    console.error('Import backup error:', err);
+    saveStatus.textContent = '❌ คืนค่าข้อมูลไม่สำเร็จ';
+  } finally {
+    btnImportVault.disabled = false;
+    btnImportVault.textContent = '⬆️ คืนค่าข้อมูล (.zip)';
+    fileImportInput.value = '';
   }
 }

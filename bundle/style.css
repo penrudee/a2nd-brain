@@ -396,4 +396,27 @@ body {
 .icon-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}.backlinks-container {
+  margin-top: 16px;
+  padding-top: 8px;
+}
+.section-divider {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 12px 0;
+}
+.backlink-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+.backlink-item:hover {
+  background: rgba(226, 74, 114, 0.15);
+  color: var(--accent-color);
 }

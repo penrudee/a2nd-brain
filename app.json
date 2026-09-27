@@ -1,5 +1,6 @@
 {
-  "id":"com.penrudee.a2nd-braind,
+  "id": "com.penrudee.a2nd-brain",
+  "slug": "a2nd-brain",
   "name": "a2nd-brain",
   "version": "0.1.0",
   "tagline": "ระบบสมองที่สองสำหรับบันทึกและจัดการความรู้",

@@ -1,32 +1,47 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A 2ND Brain</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>A2ND Brain</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="app-container">
     <!-- 1. Sidebar ด้านซ้าย -->
     <aside class="sidebar">
       <div class="brand">
-        <img src="../assets/icon.png" alt="A 2ND Brain Icon" class="app-icon">
-        <h2>A 2ND Brain</h2>
+        <img src="icon.png" alt="A2ND Brain Icon" class="app-icon">
+        <h2>A2ND Brain</h2>
       </div>
       <button id="btn-new-note" class="primary-btn">+ โน้ตใหม่</button>
       <div class="folder-tree" id="folder-tree">
         <p class="section-title">โครงสร้างสมองของคุณ</p>
-        <!-- โครงสร้างโฟลเดอร์ที่ AI สร้างให้จะมาแสดงตรงนี้ -->
       </div>
     </aside>
 
-    <!-- 2. Main Editor ตรงกลาง -->
+    <!-- 2. Main Editor ตรงกลาง (พื้นที่บันทึกหลัก) -->
     <main class="editor-section">
       <div class="editor-header">
-        <input type="text" id="note-title" placeholder="ชื่อหัวข้อโน้ต..." value="ยินดีต้อนรับสู่ A 2ND Brain">
+        <div class="status-bar">
+          <div class="status-bar">
+            <div class="status-left">
+              <span class="badge">📄 สมองส่วนถาวร</span>
+              <span id="save-status" class="save-status">✓ บันทึกแล้ว</span>
+            </div>
+            <div class="history-controls">
+              <button id="btn-undo" class="icon-btn" title="ย้อนกลับ (Undo)" disabled>↩</button>
+              <button id="btn-redo" class="icon-btn" title="ทำซ้ำ (Redo)" disabled>↪</button>
+            </div>
+          </div>
+          
+        </div>
+        <input type="text" id="note-title" placeholder="ชื่อหัวข้อโน้ต..." value="ยินดีต้อนรับสู่ A2ND Brain">
       </div>
-      <textarea id="note-content" placeholder="พิมพ์ความสนใจ ไอเดีย หรือเนื้อหาของคุณที่นี่..."></textarea>
+      <textarea id="note-content"
+        placeholder="พิมพ์ความสนใจ ไอเดีย หรือเนื้อหาของคุณที่นี่ (บันทึกให้อัตโนมัติ)..."></textarea>
     </main>
 
     <!-- 3. AI Copilot Panel ด้านขวา -->
@@ -34,13 +49,22 @@
       <div class="ai-header">
         <h3>🧠 AI Architect</h3>
       </div>
+
+      <!-- ส่วนแสดง Context ข้อความที่ผู้ใช้กำลังไฮไลต์ (คลุมดำ) -->
+      <div id="selected-context-bar" class="context-bar hidden">
+        <span class="context-label">📌 ไฮไลต์ข้อความอยู่:</span>
+        <p id="context-preview-text" class="context-preview"></p>
+        <button id="btn-clear-context" class="clear-ctx-btn">✕</button>
+      </div>
+
       <div class="ai-chat-history" id="ai-chat-history">
         <div class="chat-bubble ai">
-          สวัสดีครับ! ผมคือ AI ช่วยจัดระเบียบสมองสี่ส่วนของคุณ คุณตั้งใจจะใช้ A 2ND Brain บันทึกเรื่องอะไรเป็นหลักครับ? (เช่น งานวิจัย, ไอเดียธุรกิจ, หรือการเรียน)
+          สวัสดีครับ! ผมคือ AI ช่วยจัดระเบียบสมองสี่ส่วนของคุณ สามารถไฮไลต์ข้อความในโน้ตแล้วถามผมเฉพาะจุดได้เลยครับ!
         </div>
       </div>
+
       <div class="ai-input-box">
-        <input type="text" id="ai-input" placeholder="พิมพ์ตอบ AI เพื่อเริ่มตั้งค่าสมอง...">
+        <input type="text" id="ai-input" placeholder="พิมพ์คำสั่งหรือถาม AI...">
         <button id="btn-send-ai">ส่ง</button>
       </div>
     </aside>
@@ -48,4 +72,5 @@
 
   <script type="module" src="app.js"></script>
 </body>
+
 </html>

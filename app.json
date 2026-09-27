@@ -1,0 +1,10 @@
+{
+  "id":"com.penrudee.a2nd-braind,
+  "name": "a2nd-brain",
+  "version": "0.1.0",
+  "tagline": "ระบบสมองที่สองสำหรับบันทึกและจัดการความรู้",
+  "description": "ช่วยเก็บข้อมูล โน้ต และเชื่อมโยงความคิดด้วย AI",
+  "category": "productivity",
+  "icon": "assets/icon.png",
+  "main": "bundle/index.html"
+}

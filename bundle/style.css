@@ -1,0 +1,221 @@
+:root {
+  --bg-color: #12131C;
+  --panel-bg: #1A1C29;
+  --accent-color: #E24A72;
+  --accent-hover: #F06285;
+  --text-main: #E0E3ED;
+  --text-muted: #8C92A4;
+  --border-color: #2E3245;
+  --input-bg: #141520;
+  --user-bubble: #272A3E;
+  --ai-bubble: #311A29;
+  --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* --- 1. Sidebar --- */
+.sidebar {
+  width: 260px;
+  background-color: var(--panel-bg);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-icon {
+  width: 36px;
+  height: 36px;
+  image-rendering: pixelated;
+}
+
+.brand h2 {
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  color: var(--text-main);
+}
+
+.primary-btn {
+  background-color: var(--accent-color);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.primary-btn:hover {
+  background-color: var(--accent-hover);
+}
+
+.folder-tree {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.section-title {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.note-item {
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.note-item.active, .note-item:hover {
+  background-color: var(--border-color);
+}
+
+/* --- 2. Main Editor --- */
+.editor-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-color);
+  padding: 24px 36px;
+}
+
+.editor-header {
+  margin-bottom: 16px;
+}
+
+#note-title {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-main);
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+#note-content {
+  flex: 1;
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-main);
+  font-size: 1rem;
+  line-height: 1.6;
+  resize: none;
+}
+
+/* --- 3. AI Copilot Panel --- */
+.ai-panel {
+  width: 320px;
+  background-color: var(--panel-bg);
+  border-left: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ai-header h3 {
+  font-size: 1rem;
+  color: var(--accent-color);
+}
+
+.ai-chat-history {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-bubble {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  max-width: 90%;
+  white-space: pre-wrap;
+}
+
+.chat-bubble.ai {
+  background-color: var(--ai-bubble);
+  border: 1px solid rgba(226, 74, 114, 0.3);
+  align-self: flex-start;
+}
+
+.chat-bubble.user {
+  background-color: var(--user-bubble);
+  align-self: flex-end;
+}
+
+.ai-input-box {
+  padding: 12px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 8px;
+}
+
+#ai-input {
+  flex: 1;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text-main);
+  outline: none;
+}
+
+#ai-input:focus {
+  border-color: var(--accent-color);
+}
+
+#btn-send-ai {
+  background-color: var(--accent-color);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#btn-send-ai:hover {
+  background-color: var(--accent-hover);
+}

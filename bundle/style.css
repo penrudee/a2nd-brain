@@ -34,7 +34,7 @@ body {
 
 /* --- 1. Sidebar --- */
 .sidebar {
-  width: 260px;
+  width: 280px;
   background-color: var(--panel-bg);
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -42,21 +42,20 @@ body {
   padding: 16px;
   gap: 16px;
 }
-/* จัดเลย์เอาต์ Sidebar ฝั่งซ้ายให้เลื่อนลงมาดูได้และไม่ล้นหน้าจอ */
-    .sidebar, aside {
-      display: flex;
-      flex-direction: column;
-      max-height: 100vh;
-      overflow-y: auto;
-    }
-    #folder-tree {
-      flex-shrink: 0;
-    }
-    .connections-container {
-      margin-top: 12px;
-      padding-bottom: 20px;
-      flex-shrink: 0;
-    }
+.sidebar, aside {
+  display: flex;
+  flex-direction: column;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+#folder-tree {
+  flex-shrink: 0;
+}
+.connections-container {
+  margin-top: 12px;
+  padding-bottom: 20px;
+  flex-shrink: 0;
+}
 .brand {
   display: flex;
   align-items: center;
@@ -69,11 +68,6 @@ body {
   flex-shrink: 0;
   image-rendering: pixelated;
 }
-/* .app-icon {
-  width: 36px;
-  height: 36px;
-  image-rendering: pixelated;
-} */
 
 .brand h2 {
   font-size: 1.1rem;
@@ -121,14 +115,51 @@ body {
 .note-item.active, .note-item:hover {
   background-color: var(--border-color);
 }
+.note-preview {
+  flex: 1;
+  min-height: 0;       /* ⭐ สำคัญ! ให้ preview scroll ได้ */
+  width: 100%;
+  overflow-y: auto;    /* ⭐ ให้ scrollbar แสดง */
+  color: var(--text-main);
+  font-size: 1rem;
+  line-height: 1.75;
+  padding-right: 12px;
+  padding-top: 4px;
+}
+/* ============================================
+   Global Hidden Utility
+   ============================================ */
+.hidden { display: none !important; }
 
+/* ป้องกัน textarea แสดงในโหมด preview */
+#note-content.hidden { display: none !important; }
+
+/* ป้องกัน preview แสดงในโหมดเขียน */
+.note-preview.hidden { display: none !important; }
+/* .note-preview.hidden { display: none; } */
+.note-preview::-webkit-scrollbar,
+#note-content::-webkit-scrollbar { width: 8px; }
+.note-preview::-webkit-scrollbar-track,
+#note-content::-webkit-scrollbar-track { background: transparent; }
+.note-preview::-webkit-scrollbar-thumb,
+#note-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+.note-preview::-webkit-scrollbar-thumb:hover,
+#note-content::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}
 /* --- 2. Main Editor --- */
 .editor-section {
   flex: 1;
+  min-width: 0;        /* ป้องกัน flex overflow แนวนอน */
+  min-height: 0;       /* ⭐ สำคัญ! ทำให้ flex child scroll ได้ */
   display: flex;
   flex-direction: column;
   background-color: var(--bg-color);
   padding: 24px 36px;
+  overflow: hidden;    /* ⭐ บีบให้ content ข้างใน scroll แทนที่จะดันออกไป */
 }
 
 .editor-header {
@@ -147,6 +178,7 @@ body {
 
 #note-content {
   flex: 1;
+  min-height: 0;       /* ⭐ สำคัญ! ให้ textarea scroll ได้ */
   width: 100%;
   background: transparent;
   border: none;
@@ -155,6 +187,7 @@ body {
   font-size: 1rem;
   line-height: 1.6;
   resize: none;
+  overflow-y: auto;    /* ⭐ ให้ textarea scroll ในแนวตั้ง */
 }
 
 /* --- 3. AI Copilot Panel --- */
@@ -239,7 +272,7 @@ body {
 #btn-send-ai:hover {
   background-color: var(--accent-hover);
 }
-/* เพิ่มส่วน Status Bar ใน Editor */
+
 .status-bar {
   display: flex;
   justify-content: space-between;
@@ -302,7 +335,9 @@ body {
 
 .clear-ctx-btn:hover {
   color: var(--text-main);
-}/* ปุ่ม Action ของ AI Chat */
+}
+
+/* ปุ่ม Action ของ AI Chat */
 .ai-action-box {
   margin-top: 8px;
   padding-top: 8px;
@@ -386,6 +421,7 @@ body {
   font-style: italic;
   padding: 8px;
 }
+
 .history-controls {
   display: flex;
   gap: 4px;
@@ -410,7 +446,9 @@ body {
 .icon-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
-}.backlinks-container {
+}
+
+.backlinks-container {
   margin-top: 16px;
   padding-top: 8px;
 }
@@ -433,4 +471,122 @@ body {
 .backlink-item:hover {
   background: rgba(226, 74, 114, 0.15);
   color: var(--accent-color);
+}
+
+/* ============================================
+   เพิ่มใหม่: ปุ่มซ่อน/แสดง Backlinks Panel
+   ============================================ */
+.collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 4px 0;
+  user-select: none;
+}
+.collapsible-header .section-title {
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.collapse-toggle-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text-muted);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+}
+.collapse-toggle-btn:hover {
+  background: rgba(226, 74, 114, 0.2);
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+.collapsible-body {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.2s ease;
+  max-height: 800px;
+  opacity: 1;
+}
+.collapsible-body.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* ============================================
+   เพิ่มใหม่: Folder Hint (คำอธิบายโฟลเดอร์)
+   ============================================ */
+.folder-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 2px 8px 6px 28px;
+  line-height: 1.3;
+  opacity: 0.75;
+}
+.folder-info-icon {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-left: 4px;
+  cursor: help;
+}
+
+/* ============================================
+   เพิ่มใหม่: Folder Legend (คำอธิบายสมอง 4 ส่วน)
+   ============================================ */
+.brain-legend {
+  background: rgba(226, 74, 114, 0.08);
+  border: 1px solid rgba(226, 74, 114, 0.2);
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 12px;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+.brain-legend-title {
+  color: var(--accent-color);
+  font-weight: bold;
+  font-size: 11px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brain-legend-title .toggle-legend {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 4px;
+}
+.brain-legend-title .toggle-legend:hover {
+  color: var(--accent-color);
+}
+.brain-legend-body {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.2s ease;
+  max-height: 500px;
+  opacity: 1;
+}
+.brain-legend-body.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+.brain-legend-item {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 5px;
+  color: var(--text-muted);
+}
+.brain-legend-icon {
+  flex-shrink: 0;
+}
+.brain-legend-text strong {
+  color: var(--text-main);
+  font-weight: 600;
 }

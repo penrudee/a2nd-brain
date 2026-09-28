@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
@@ -10,62 +10,69 @@
 
 <body>
   <div class="app-container">
-    <!-- 1. Sidebar ด้านซ้าย -->
+    <!-- 1. Sidebar -->
     <aside class="sidebar">
+      
       <div class="brand">
         <img src="icon.png" alt="A2ND Brain Icon" class="app-icon">
         <h2>A2ND Brain</h2>
+        <button id="btn-lang-toggle" class="lang-toggle-btn" title="Switch language">🌐 ไทย</button>
       </div>
-      <button id="btn-new-note" class="primary-btn">+ โน้ตใหม่</button>
+      <button id="btn-new-note" class="primary-btn" data-i18n="newNote">+ New Note</button>
       <div class="folder-tree" id="folder-tree">
-        <p class="section-title">โครงสร้างสมองของคุณ</p>
+        <p class="section-title" data-i18n="brainStructureTitle">🧠 Your Brain Structure</p>
       </div>
     </aside>
 
-    <!-- 2. Main Editor ตรงกลาง (พื้นที่บันทึกหลัก) -->
+    <!-- 2. Main Editor -->
     <main class="editor-section">
       <div class="editor-header">
         <div class="status-bar">
-          <div class="status-bar">
-            <div class="status-left">
-              <span class="badge">📄 สมองส่วนถาวร</span>
-              <span id="save-status" class="save-status">✓ บันทึกแล้ว</span>
-            </div>
+          <div class="status-left">
+            <span class="badge" data-i18n="permanentBrain">📄 Permanent Brain</span>
+            <span id="save-status" class="save-status" data-i18n="saved">✓ Saved</span>
+          </div>
+          <div class="status-right">
+            <button id="btn-toggle-view" class="view-toggle-btn" data-i18n-title="toggleViewTitle"
+              title="Toggle: Write ↔ Read">
+              <span id="view-toggle-icon">👁</span>
+              <span id="view-toggle-label" data-i18n="read">Read</span>
+            </button>
             <div class="history-controls">
-              <button id="btn-undo" class="icon-btn" title="ย้อนกลับ (Undo)" disabled>↩</button>
-              <button id="btn-redo" class="icon-btn" title="ทำซ้ำ (Redo)" disabled>↪</button>
+              <button id="btn-undo" class="icon-btn" data-i18n-title="undo" title="Undo" disabled>↩</button>
+              <button id="btn-redo" class="icon-btn" data-i18n-title="redo" title="Redo" disabled>↪</button>
             </div>
           </div>
-          
         </div>
-        <input type="text" id="note-title" placeholder="ชื่อหัวข้อโน้ต..." value="ยินดีต้อนรับสู่ A2ND Brain">
+        <input type="text" id="note-title" data-i18n-placeholder="noteTitlePlaceholder" placeholder="Note title...">
       </div>
-      <textarea id="note-content"
-        placeholder="พิมพ์ความสนใจ ไอเดีย หรือเนื้อหาของคุณที่นี่ (บันทึกให้อัตโนมัติ)..."></textarea>
+      <textarea id="note-content" data-i18n-placeholder="noteContentPlaceholder"
+        placeholder="Type your thoughts, ideas, or content here (auto-saved)..."></textarea>
+      <div id="note-preview" class="note-preview hidden"></div>
     </main>
 
-    <!-- 3. AI Copilot Panel ด้านขวา -->
+    <!-- 3. AI Copilot Panel -->
     <aside class="ai-panel">
       <div class="ai-header">
-        <h3>🧠 AI Architect</h3>
+        <h3 data-i18n="aiArchitect">🧠 AI Architect</h3>
       </div>
 
-      <!-- ส่วนแสดง Context ข้อความที่ผู้ใช้กำลังไฮไลต์ (คลุมดำ) -->
       <div id="selected-context-bar" class="context-bar hidden">
-        <span class="context-label">📌 ไฮไลต์ข้อความอยู่:</span>
+        <span class="context-label" data-i18n="highlightedText">📌 Highlighted:</span>
         <p id="context-preview-text" class="context-preview"></p>
         <button id="btn-clear-context" class="clear-ctx-btn">✕</button>
       </div>
 
       <div class="ai-chat-history" id="ai-chat-history">
-        <div class="chat-bubble ai">
-          สวัสดีครับ! ผมคือ AI ช่วยจัดระเบียบสมองสี่ส่วนของคุณ สามารถไฮไลต์ข้อความในโน้ตแล้วถามผมเฉพาะจุดได้เลยครับ!
+        <div class="chat-bubble ai" data-i18n="aiGreeting">
+          Hi! I'm your AI assistant for organizing your brain. Highlight any text in your note and ask me about it!
         </div>
       </div>
 
       <div class="ai-input-box">
-        <input type="text" id="ai-input" placeholder="พิมพ์คำสั่งหรือถาม AI...">
-        <button id="btn-send-ai">ส่ง</button>
+        <input type="text" id="ai-input" data-i18n-placeholder="aiInputPlaceholder"
+          placeholder="Ask AI or give a command...">
+        <button id="btn-send-ai" data-i18n="send">Send</button>
       </div>
     </aside>
   </div>

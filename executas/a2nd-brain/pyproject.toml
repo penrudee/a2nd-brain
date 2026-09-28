@@ -3,13 +3,17 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tool-dev-a2nd-brain"
+name = "a2nd-brain"
 version = "0.1.0"
-description = "Executa for the a2nd-brain Anna App"
+description = "Executa background service for the a2nd-brain Anna App"
 requires-python = ">=3.10"
+dependencies = [
+    "openai>=1.0.0",          # ดึงเข้าสำหรับเรียกใช้งานโมเดลภาษาผ่าน SDK (ปรับเพิ่มตาม library ที่ใช้ในโค้ด)
+    "pydantic>=2.0"          # สำหรับจัดการโครงสร้างข้อมูล JSON ที่ส่งผ่านช่องทางเครื่องมือ
+]
 
 [project.scripts]
-"tool-dev-a2nd-brain" = "a2nd_brain_plugin:main"
+a2nd-brain = "a2nd_brain_plugin:main"
 
 [tool.setuptools]
 py-modules = ["a2nd_brain_plugin"]

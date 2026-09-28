@@ -1,0 +1,9 @@
+{
+  "slug": "a2nd-brain",
+  "name": "a2nd-brain",
+  "tool_id": "tool-a2nd-brain-a2nd-brain-5gys27mp",
+  "version": "0.1.0",
+  "executa_type": "tool",
+  "type": "python",
+  "enabled": true
+}

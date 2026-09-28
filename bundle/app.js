@@ -1020,33 +1020,31 @@ function redo() {
 // ==========================================
 // Storage
 // ==========================================
+const NOTES_KEY = 'a2nd_notes_list';
 async function getNotesFromStorage() {
-  const annaStorage = anna?.storage;
-  if (annaStorage && typeof annaStorage.get === 'function') {
-    try {
-      const result = await annaStorage.get({ key: 'a2nd_notes_list' });
-      const data = typeof result === 'string' ? result : result?.value;
-      if (!data) return [];
-      const parsed = JSON.parse(data);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-      console.error('Storage get error:', e);
-      return [];
+  // 1) Anna storage
+  if (typeof anna?.storage?.get === 'function') {
+    const result = await anna.storage.get({ key: NOTES_KEY }); // ไม่ catch -> ให้ผู้เรียกรู้ว่าอ่านพลาด
+    const raw = typeof result === 'string' ? result : result?.value;
+    if (raw) {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (Array.isArray(parsed)) return parsed;
     }
   }
-  return JSON.parse(localStorage.getItem('a2nd_notes_list') || '[]');
+  // 2) fallback: สำเนาใน localStorage
+  try {
+    return JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
+  } catch { return []; }
 }
 
 async function saveNotesToStorage(notes) {
-  const annaStorage = anna?.storage;
-  if (annaStorage && typeof annaStorage.set === 'function') {
-    try {
-      await annaStorage.set({ key: 'a2nd_notes_list', value: JSON.stringify(notes) });
-    } catch (e) {
-      console.error('Storage set error:', e);
-    }
+  const json = JSON.stringify(notes);
+  try { localStorage.setItem(NOTES_KEY, json); } catch (e) { console.warn('local mirror failed', e); }
+  if (typeof anna?.storage?.set === 'function') {
+    await anna.storage.set({ key: NOTES_KEY, value: json });
+    console.log('[storage] saved', notes.length, 'notes to anna.storage');
   } else {
-    localStorage.setItem('a2nd_notes_list', JSON.stringify(notes));
+    console.warn('[storage] anna.storage unavailable, using localStorage only');
   }
 }
 

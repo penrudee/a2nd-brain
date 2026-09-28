@@ -1,0 +1,8 @@
+{
+  "$schema": "anna-app-identity/v1",
+  "host": "https://anna.partners",
+  "app_id": 345,
+  "slug": "a2nd-brain",
+  "handle": "a2nd-brain",
+  "first_published_at": "2026-09-28T03:29:54.081Z"
+}

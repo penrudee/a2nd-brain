@@ -3,9 +3,10 @@
   "slug": "a2nd-brain",
   "name": "a2nd-brain",
   "version": "0.1.0",
-  "tagline": "ระบบสมองที่สองสำหรับบันทึกและจัดการความรู้",
-  "description": "ช่วยเก็บข้อมูล โน้ต และเชื่อมโยงความคิดด้วย AI",
+  "tagline": "Your second brain for notes and knowledge management.",
+  "description": "The frictionless second brain that does the heavy lifting for you. Powered by AI, it automatically formats, refines, and interlinks your notes and files into a connected knowledge base without the complexity of traditional markdown tools.",
   "category": "productivity",
   "icon": "assets/icon.png",
-  "main": "bundle/index.html"
+  "main": "bundle/index.html",
+  "price_model": "byok"  
 }
